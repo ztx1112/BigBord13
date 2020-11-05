@@ -1,0 +1,25 @@
+{
+    "beforeBuildTasks": [],
+    "afterBuildTasks": [
+        {
+            "name": "clean",
+            "command": "del \"${OutDir}\\*.map\" \"${OutDir}\\*.rst\" \"${OutDir}\\*.sym\""
+        }
+    ],
+    "global": {
+        "device": "mcs51",
+        "optimize-type": "speed",
+        "specific-options": [
+            "--model-large"
+        ],
+        "use-non-free": false
+    },
+    "c/cpp-compiler": {
+        "language-c": "c99"
+    },
+    "asm-compiler": {},
+    "linker": {
+        "$mainFileName": "main"
+    },
+    "version": 1
+}

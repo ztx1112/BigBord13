@@ -1,0 +1,65 @@
+{
+    "name": "BigBord13",
+    "type": "C51",
+    "mode": "Release",
+    "toolchain": "SDCC",
+    "dependenceList": [
+        {
+            "groupName": "custom",
+            "depList": [
+                {
+                    "name": "default",
+                    "incList": [],
+                    "libList": [],
+                    "sourceDirList": [],
+                    "defineList": [
+                        "CLOCK=16"
+                    ]
+                }
+            ]
+        },
+        {
+            "groupName": "build-in",
+            "depList": [
+                {
+                    "name": "default",
+                    "incList": [],
+                    "libList": [],
+                    "sourceDirList": [],
+                    "defineList": []
+                },
+                {
+                    "name": "toolchain",
+                    "incList": [
+                        "c:\\Program Files\\SDCC\\include",
+                        "c:\\Program Files\\SDCC\\non-free\\include"
+                    ],
+                    "sourceDirList": [],
+                    "libList": [
+                        "c:\\Program Files\\SDCC\\lib"
+                    ],
+                    "defineList": []
+                }
+            ]
+        }
+    ],
+    "compileConfig": {
+        "options": ""
+    },
+    "srcDirs": [
+        ".\\src",
+        ".\\lib",
+        ".\\driver"
+    ],
+    "outDir": ".\\out",
+    "uploadConfig": {
+        "bin": ".\\out\\Release\\BigBord13.hex",
+        "eepromImgPath": "undefined",
+        "options": "./.EIDE/stc.flash.json"
+    },
+    "uploader": "stcgal",
+    "excludeList": [],
+    "miscInfo": {
+        "lastBuildTime": 1604559361853
+    }
+}
