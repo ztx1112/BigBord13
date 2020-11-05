@@ -22,5 +22,6 @@
 
 #define LED P55
 
+#define PUL P33
 
 #endif
