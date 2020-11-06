@@ -9,7 +9,31 @@
 ; Public variables in this module
 ;--------------------------------------------------------
 	.globl _main
-	.globl _PCA_Stop
+	.globl _UART_Handle
+	.globl _Rom_Init
+	.globl _UART_Read
+	.globl _Run
+	.globl _Tohome
+	.globl _ROM_Write
+	.globl _Delay1us
+	.globl _Delay100us
+	.globl _Delay100ms
+	.globl _strstr
+	.globl _IapProgram
+	.globl _IapRead
+	.globl _IapErase
+	.globl _IapIdle
+	.globl __IAP_ADDR_TRIG
+	.globl _Uart2SendStr
+	.globl _Uart2Send
+	.globl _Uart2Read
+	.globl _Uart2Init
+	.globl _Uart2Isr
+	.globl _Uart1SendStr
+	.globl _Uart1Send
+	.globl _Uart1Read
+	.globl _Uart1Init
+	.globl _Uart1Isr
 	.globl _PCA_Run
 	.globl _PCA_Init
 	.globl _PCA_Isr
@@ -250,14 +274,43 @@
 	.globl _PSW
 	.globl _B
 	.globl _ACC
+	.globl _uart2end
+	.globl _uart1end
+	.globl _uart2num
+	.globl _uart1num
+	.globl _uart2buff
+	.globl _uart1buff
+	.globl _Page
+	.globl _Page_03
+	.globl _Page_02
+	.globl _Page_01
+	.globl _Page_00
+	.globl _tests
+	.globl _Button_09
+	.globl _Button_08
+	.globl _Button_07
+	.globl _Button_06
+	.globl _Button_05
+	.globl _Button_04
+	.globl _Button_03
+	.globl _Button_02
+	.globl _Button_01
+	.globl _Button_00
+	.globl _PCA_state
+	.globl _value_max
 	.globl _value_count
 	.globl _value_hz
-	.globl _value_max
+	.globl _ii
+	.globl _i
+	.globl _buf
+	.globl _IapProgram_PARM_2
+	.globl _motor_circle
 	.globl _value
 	.globl _uart4
 	.globl _uart3
 	.globl _uart2
 	.globl _uart1
+	.globl _PCA_Stop
 ;--------------------------------------------------------
 ; special function registers
 ;--------------------------------------------------------
@@ -569,8 +622,38 @@ _uart4::
 	.ds 19
 _value::
 	.ds 2
-_value_max::
+_motor_circle::
+	.ds 1
+_PCA_Run_v_65536_22:
 	.ds 2
+_Uart1Send_dat_65536_31:
+	.ds 1
+_Uart1SendStr_p_65536_33:
+	.ds 3
+_Uart2Send_dat_65536_42:
+	.ds 1
+_Uart2SendStr_p_65536_44:
+	.ds 3
+__IAP_ADDR_TRIG_address_65536_47:
+	.ds 2
+_IapErase_address_65536_50:
+	.ds 2
+_IapRead_address_65536_52:
+	.ds 2
+_IapRead_dat_65536_53:
+	.ds 1
+_IapProgram_PARM_2:
+	.ds 1
+_IapProgram_address_65536_54:
+	.ds 2
+_buf::
+	.ds 1
+_i::
+	.ds 2
+_ii::
+	.ds 2
+_ROM_Write_h_65536_86:
+	.ds 1
 ;--------------------------------------------------------
 ; absolute external ram data
 ;--------------------------------------------------------
@@ -583,6 +666,54 @@ _value_hz::
 	.ds 2
 _value_count::
 	.ds 2
+_value_max::
+	.ds 2
+_PCA_state::
+	.ds 2
+_Button_00::
+	.ds 7
+_Button_01::
+	.ds 7
+_Button_02::
+	.ds 7
+_Button_03::
+	.ds 7
+_Button_04::
+	.ds 7
+_Button_05::
+	.ds 7
+_Button_06::
+	.ds 7
+_Button_07::
+	.ds 7
+_Button_08::
+	.ds 7
+_Button_09::
+	.ds 7
+_tests::
+	.ds 7
+_Page_00::
+	.ds 8
+_Page_01::
+	.ds 8
+_Page_02::
+	.ds 8
+_Page_03::
+	.ds 8
+_Page::
+	.ds 1
+_uart1buff::
+	.ds 20
+_uart2buff::
+	.ds 20
+_uart1num::
+	.ds 1
+_uart2num::
+	.ds 1
+_uart1end::
+	.ds 1
+_uart2end::
+	.ds 1
 	.area HOME    (CODE)
 	.area GSINIT0 (CODE)
 	.area GSINIT1 (CODE)
@@ -607,13 +738,15 @@ __interrupt_vect:
 	.ds	7
 	reti
 	.ds	7
-	reti
-	.ds	7
+	ljmp	_Uart1Isr
+	.ds	5
 	reti
 	.ds	7
 	reti
 	.ds	7
 	ljmp	_PCA_Isr
+	.ds	5
+	ljmp	_Uart2Isr
 ;--------------------------------------------------------
 ; global & static initialisations
 ;--------------------------------------------------------
@@ -644,7 +777,7 @@ __sdcc_program_startup:
 ;------------------------------------------------------------
 ;Allocation info for local variables in function 'PCA_Isr'
 ;------------------------------------------------------------
-;	./lib/PCA.h:14: void PCA_Isr() __interrupt(PCA_VECTOR)
+;	./lib/PCA.h:19: void PCA_Isr() __interrupt(PCA_VECTOR)
 ;	-----------------------------------------
 ;	 function PCA_Isr
 ;	-----------------------------------------
@@ -672,7 +805,7 @@ _PCA_Isr:
 	push	(0+0)
 	push	psw
 	mov	psw,#0x00
-;	./lib/PCA.h:16: CCAP0L = value;
+;	./lib/PCA.h:21: CCAP0L = value;
 	mov	dptr,#_value
 	movx	a,@dptr
 	mov	r6,a
@@ -680,9 +813,9 @@ _PCA_Isr:
 	movx	a,@dptr
 	mov	r7,a
 	mov	_CCAP0L,r6
-;	./lib/PCA.h:17: CCAP0H = value >> 8;
+;	./lib/PCA.h:22: CCAP0H = value >> 8;
 	mov	_CCAP0H,r7
-;	./lib/PCA.h:18: value += HZ(value_hz);
+;	./lib/PCA.h:23: value += HZ(value_hz);
 	mov	dptr,#_value_hz
 	movx	a,@dptr
 	mov	r4,a
@@ -718,9 +851,9 @@ _PCA_Isr:
 	addc	a,r7
 	inc	dptr
 	movx	@dptr,a
-;	./lib/PCA.h:19: if (CCF0 != 0)
+;	./lib/PCA.h:24: if (CCF0 != 0)
 	jnb	_CCF0,00102$
-;	./lib/PCA.h:21: value_count += 1;
+;	./lib/PCA.h:26: value_count += 1;
 	mov	dptr,#_value_count
 	movx	a,@dptr
 	mov	r6,a
@@ -736,7 +869,7 @@ _PCA_Isr:
 	inc	dptr
 	movx	@dptr,a
 00102$:
-;	./lib/PCA.h:23: if(value_count>=value_max)
+;	./lib/PCA.h:28: if (value_count >= value_max)
 	mov	dptr,#_value_count
 	movx	a,@dptr
 	mov	r6,a
@@ -755,19 +888,26 @@ _PCA_Isr:
 	mov	a,r7
 	subb	a,r5
 	jc	00104$
-;	./lib/PCA.h:25: PCA_Stop();
+;	./lib/PCA.h:30: PCA_Stop();
 	lcall	_PCA_Stop
-;	./lib/PCA.h:26: value_count=0;
+;	./lib/PCA.h:31: value_count = 0;
 	mov	dptr,#_value_count
 	clr	a
 	movx	@dptr,a
 	inc	dptr
 	movx	@dptr,a
+;	./lib/PCA.h:32: PCA_state = 1;
+	mov	dptr,#_PCA_state
+	inc	a
+	movx	@dptr,a
+	clr	a
+	inc	dptr
+	movx	@dptr,a
 00104$:
-;	./lib/PCA.h:28: CCF0 = 0;
+;	./lib/PCA.h:34: CCF0 = 0;
 ;	assignBit
 	clr	_CCF0
-;	./lib/PCA.h:29: }
+;	./lib/PCA.h:35: }
 	pop	psw
 	pop	(0+0)
 	pop	(0+1)
@@ -786,22 +926,22 @@ _PCA_Isr:
 ;------------------------------------------------------------
 ;Allocation info for local variables in function 'PCA_Init'
 ;------------------------------------------------------------
-;	./lib/PCA.h:31: void PCA_Init()
+;	./lib/PCA.h:37: void PCA_Init()
 ;	-----------------------------------------
 ;	 function PCA_Init
 ;	-----------------------------------------
 _PCA_Init:
-;	./lib/PCA.h:33: CCON = 0x00;
+;	./lib/PCA.h:39: CCON = 0x00;
 	mov	_CCON,#0x00
-;	./lib/PCA.h:34: CMOD = 0x08; //PCA时钟为系统时钟
+;	./lib/PCA.h:40: CMOD = 0x08; //PCA时钟为系统时钟
 	mov	_CMOD,#0x08
-;	./lib/PCA.h:35: CL = 0x00;
+;	./lib/PCA.h:41: CL = 0x00;
 	mov	_CL,#0x00
-;	./lib/PCA.h:36: CH = 0x00;
+;	./lib/PCA.h:42: CH = 0x00;
 	mov	_CH,#0x00
-;	./lib/PCA.h:37: CCAPM0 = 0x4d; //PCA模块0为16位定时器模式并使能脉冲输出
+;	./lib/PCA.h:43: CCAPM0 = 0x4d; //PCA模块0为16位定时器模式并使能脉冲输出
 	mov	_CCAPM0,#0x4d
-;	./lib/PCA.h:38: value = HZ(value_hz);
+;	./lib/PCA.h:44: value = HZ(value_hz);
 	mov	dptr,#_value_hz
 	movx	a,@dptr
 	mov	r6,a
@@ -825,11 +965,11 @@ _PCA_Init:
 	lcall	__divslong
 	mov	r4,dpl
 	mov	r5,dph
-;	./lib/PCA.h:39: CCAP0L = value;
+;	./lib/PCA.h:45: CCAP0L = value;
 	mov	_CCAP0L,r4
-;	./lib/PCA.h:40: CCAP0H = value >> 8;
+;	./lib/PCA.h:46: CCAP0H = value >> 8;
 	mov	_CCAP0H,r5
-;	./lib/PCA.h:41: value += HZ(value_hz);
+;	./lib/PCA.h:47: value += HZ(value_hz);
 	mov	a,r4
 	add	a,r4
 	mov	r4,a
@@ -842,22 +982,55 @@ _PCA_Init:
 	mov	a,r5
 	inc	dptr
 	movx	@dptr,a
-;	./lib/PCA.h:42: EA = 1;
+;	./lib/PCA.h:48: EA = 1;
 ;	assignBit
 	setb	_EA
-;	./lib/PCA.h:43: }
+;	./lib/PCA.h:49: }
 	ret
 ;------------------------------------------------------------
 ;Allocation info for local variables in function 'PCA_Run'
 ;------------------------------------------------------------
-;	./lib/PCA.h:45: void PCA_Run()
+;v                         Allocated with name '_PCA_Run_v_65536_22'
+;------------------------------------------------------------
+;	./lib/PCA.h:51: void PCA_Run(unsigned int v)
 ;	-----------------------------------------
 ;	 function PCA_Run
 ;	-----------------------------------------
 _PCA_Run:
-;	./lib/PCA.h:47: CCAPM0 = 0x4d; //PCA模块0为16位定时器模式并使能脉冲输出
+	mov	r7,dph
+	mov	a,dpl
+	mov	dptr,#_PCA_Run_v_65536_22
+	movx	@dptr,a
+	mov	a,r7
+	inc	dptr
+	movx	@dptr,a
+;	./lib/PCA.h:53: value_max = v;
+	mov	dptr,#_PCA_Run_v_65536_22
+	movx	a,@dptr
+	mov	r6,a
+	inc	dptr
+	movx	a,@dptr
+	mov	r7,a
+	mov	dptr,#_value_max
+	mov	a,r6
+	movx	@dptr,a
+	mov	a,r7
+	inc	dptr
+	movx	@dptr,a
+;	./lib/PCA.h:54: value_count = 0;
+	mov	dptr,#_value_count
+	clr	a
+	movx	@dptr,a
+	inc	dptr
+	movx	@dptr,a
+;	./lib/PCA.h:55: PCA_state = 0;
+	mov	dptr,#_PCA_state
+	movx	@dptr,a
+	inc	dptr
+	movx	@dptr,a
+;	./lib/PCA.h:56: CCAPM0 = 0x4d; //PCA模块0为16位定时器模式并使能脉冲输出
 	mov	_CCAPM0,#0x4d
-;	./lib/PCA.h:48: value = HZ(value_hz);
+;	./lib/PCA.h:57: value = HZ(value_hz);
 	mov	dptr,#_value_hz
 	movx	a,@dptr
 	mov	r6,a
@@ -881,11 +1054,11 @@ _PCA_Run:
 	lcall	__divslong
 	mov	r4,dpl
 	mov	r5,dph
-;	./lib/PCA.h:49: CCAP0L = value;
+;	./lib/PCA.h:58: CCAP0L = value;
 	mov	_CCAP0L,r4
-;	./lib/PCA.h:50: CCAP0H = value >> 8;
+;	./lib/PCA.h:59: CCAP0H = value >> 8;
 	mov	_CCAP0H,r5
-;	./lib/PCA.h:51: value += HZ(value_hz);
+;	./lib/PCA.h:60: value += HZ(value_hz);
 	mov	a,r4
 	add	a,r4
 	mov	r4,a
@@ -898,22 +1071,22 @@ _PCA_Run:
 	mov	a,r5
 	inc	dptr
 	movx	@dptr,a
-;	./lib/PCA.h:52: CR=1;
+;	./lib/PCA.h:61: CR = 1;
 ;	assignBit
 	setb	_CR
-;	./lib/PCA.h:53: }
+;	./lib/PCA.h:62: }
 	ret
 ;------------------------------------------------------------
 ;Allocation info for local variables in function 'PCA_Stop'
 ;------------------------------------------------------------
-;	./lib/PCA.h:55: void PCA_Stop()
+;	./lib/PCA.h:64: void PCA_Stop()
 ;	-----------------------------------------
 ;	 function PCA_Stop
 ;	-----------------------------------------
 _PCA_Stop:
-;	./lib/PCA.h:57: CCAPM0 = 0x00; 
+;	./lib/PCA.h:66: CCAPM0 = 0x00;
 	mov	_CCAPM0,#0x00
-;	./lib/PCA.h:58: value = HZ(value_hz);
+;	./lib/PCA.h:67: value = HZ(value_hz);
 	mov	dptr,#_value_hz
 	movx	a,@dptr
 	mov	r6,a
@@ -943,56 +1116,1469 @@ _PCA_Stop:
 	mov	a,r5
 	inc	dptr
 	movx	@dptr,a
-;	./lib/PCA.h:59: CCAP0L = value;
+;	./lib/PCA.h:68: CCAP0L = value;
 	mov	_CCAP0L,r4
-;	./lib/PCA.h:60: CCAP0H = value >> 8;
+;	./lib/PCA.h:69: CCAP0H = value >> 8;
 	mov	_CCAP0H,r5
-;	./lib/PCA.h:61: CR=0;
+;	./lib/PCA.h:70: CR = 0;
 ;	assignBit
 	clr	_CR
-;	./lib/PCA.h:62: }
+;	./lib/PCA.h:71: }
+	ret
+;------------------------------------------------------------
+;Allocation info for local variables in function 'Uart1Isr'
+;------------------------------------------------------------
+;	./lib/stc8uart.h:5: void Uart1Isr() __interrupt(UART1_VECTOR)
+;	-----------------------------------------
+;	 function Uart1Isr
+;	-----------------------------------------
+_Uart1Isr:
+	push	acc
+	push	dpl
+	push	dph
+	push	ar7
+	push	ar6
+	push	psw
+	mov	psw,#0x00
+;	./lib/stc8uart.h:7: if (TI)
+;	./lib/stc8uart.h:9: TI = 0;
+;	assignBit
+	jbc	_TI,00115$
+	sjmp	00102$
+00115$:
+;	./lib/stc8uart.h:10: uart1.busy = 0;
+	mov	dptr,#_uart1
+	clr	a
+	movx	@dptr,a
+00102$:
+;	./lib/stc8uart.h:12: if (RI)
+;	./lib/stc8uart.h:14: RI = 0;
+;	assignBit
+	jbc	_RI,00116$
+	sjmp	00105$
+00116$:
+;	./lib/stc8uart.h:15: uart1.buffer[uart1.wptr++] = SBUF;
+	mov	dptr,#(_uart1 + 0x0001)
+	movx	a,@dptr
+	mov	r7,a
+	inc	a
+	mov	r6,a
+	mov	dptr,#(_uart1 + 0x0001)
+	movx	@dptr,a
+	mov	a,r7
+	add	a,#(_uart1 + 0x0003)
+	mov	dpl,a
+	clr	a
+	addc	a,#((_uart1 + 0x0003) >> 8)
+	mov	dph,a
+	mov	a,_SBUF
+	movx	@dptr,a
+;	./lib/stc8uart.h:16: uart1.wptr &= 0x0f;
+	anl	ar6,#0x0f
+	mov	dptr,#(_uart1 + 0x0001)
+	mov	a,r6
+	movx	@dptr,a
+00105$:
+;	./lib/stc8uart.h:18: }
+	pop	psw
+	pop	ar6
+	pop	ar7
+	pop	dph
+	pop	dpl
+	pop	acc
+	reti
+;	eliminated unneeded push/pop b
+;------------------------------------------------------------
+;Allocation info for local variables in function 'Uart1Init'
+;------------------------------------------------------------
+;	./lib/stc8uart.h:19: void Uart1Init()
+;	-----------------------------------------
+;	 function Uart1Init
+;	-----------------------------------------
+_Uart1Init:
+;	./lib/stc8uart.h:21: SCON = 0x50;
+	mov	_SCON,#0x50
+;	./lib/stc8uart.h:22: TMOD = 0x00;
+	mov	_TMOD,#0x00
+;	./lib/stc8uart.h:23: TL1 = BRT;
+	mov	_TL1,#0xcc
+;	./lib/stc8uart.h:24: TH1 = BRT >> 8;
+	mov	_TH1,#0xff
+;	./lib/stc8uart.h:25: TR1 = 1;
+;	assignBit
+	setb	_TR1
+;	./lib/stc8uart.h:26: AUXR |= 0x40;
+	orl	_AUXR,#0x40
+;	./lib/stc8uart.h:27: uart1.busy = 0;
+	mov	dptr,#_uart1
+	clr	a
+	movx	@dptr,a
+;	./lib/stc8uart.h:28: uart1.wptr = 0;
+	mov	dptr,#(_uart1 + 0x0001)
+	movx	@dptr,a
+;	./lib/stc8uart.h:29: uart1.rptr = 0;
+	mov	dptr,#(_uart1 + 0x0002)
+	movx	@dptr,a
+;	./lib/stc8uart.h:30: }
+	ret
+;------------------------------------------------------------
+;Allocation info for local variables in function 'Uart1Read'
+;------------------------------------------------------------
+;tmp                       Allocated with name '_Uart1Read_tmp_131072_30'
+;------------------------------------------------------------
+;	./lib/stc8uart.h:32: char Uart1Read()
+;	-----------------------------------------
+;	 function Uart1Read
+;	-----------------------------------------
+_Uart1Read:
+;	./lib/stc8uart.h:34: if (uart1.rptr != uart1.wptr)
+	mov	dptr,#(_uart1 + 0x0002)
+	movx	a,@dptr
+	mov	r7,a
+	mov	dptr,#(_uart1 + 0x0001)
+	movx	a,@dptr
+	mov	r6,a
+	mov	a,r7
+	cjne	a,ar6,00109$
+	ret
+00109$:
+;	./lib/stc8uart.h:36: char tmp = uart1.buffer[uart1.rptr++];
+	mov	a,r7
+	inc	a
+	mov	r6,a
+	mov	dptr,#(_uart1 + 0x0002)
+	movx	@dptr,a
+	mov	a,r7
+	add	a,#(_uart1 + 0x0003)
+	mov	dpl,a
+	clr	a
+	addc	a,#((_uart1 + 0x0003) >> 8)
+	mov	dph,a
+	movx	a,@dptr
+	mov	r7,a
+;	./lib/stc8uart.h:37: uart1.rptr &= 0x0f;
+	anl	ar6,#0x0f
+	mov	dptr,#(_uart1 + 0x0002)
+	mov	a,r6
+	movx	@dptr,a
+;	./lib/stc8uart.h:38: return tmp;
+	mov	dpl,r7
+;	./lib/stc8uart.h:40: }
+	ret
+;------------------------------------------------------------
+;Allocation info for local variables in function 'Uart1Send'
+;------------------------------------------------------------
+;dat                       Allocated with name '_Uart1Send_dat_65536_31'
+;------------------------------------------------------------
+;	./lib/stc8uart.h:42: void Uart1Send(char dat)
+;	-----------------------------------------
+;	 function Uart1Send
+;	-----------------------------------------
+_Uart1Send:
+	mov	a,dpl
+	mov	dptr,#_Uart1Send_dat_65536_31
+	movx	@dptr,a
+;	./lib/stc8uart.h:44: while (uart1.busy)
+00101$:
+	mov	dptr,#_uart1
+	movx	a,@dptr
+	jnz	00101$
+;	./lib/stc8uart.h:46: uart1.busy = 1;
+	mov	dptr,#_uart1
+	mov	a,#0x01
+	movx	@dptr,a
+;	./lib/stc8uart.h:47: SBUF = dat;
+	mov	dptr,#_Uart1Send_dat_65536_31
+	movx	a,@dptr
+	mov	_SBUF,a
+;	./lib/stc8uart.h:48: }
+	ret
+;------------------------------------------------------------
+;Allocation info for local variables in function 'Uart1SendStr'
+;------------------------------------------------------------
+;p                         Allocated with name '_Uart1SendStr_p_65536_33'
+;------------------------------------------------------------
+;	./lib/stc8uart.h:50: void Uart1SendStr(char *p)
+;	-----------------------------------------
+;	 function Uart1SendStr
+;	-----------------------------------------
+_Uart1SendStr:
+	mov	r7,b
+	mov	r6,dph
+	mov	a,dpl
+	mov	dptr,#_Uart1SendStr_p_65536_33
+	movx	@dptr,a
+	mov	a,r6
+	inc	dptr
+	movx	@dptr,a
+	mov	a,r7
+	inc	dptr
+	movx	@dptr,a
+;	./lib/stc8uart.h:52: while (*p)
+	mov	dptr,#_Uart1SendStr_p_65536_33
+	movx	a,@dptr
+	mov	r5,a
+	inc	dptr
+	movx	a,@dptr
+	mov	r6,a
+	inc	dptr
+	movx	a,@dptr
+	mov	r7,a
+00101$:
+	mov	dpl,r5
+	mov	dph,r6
+	mov	b,r7
+	lcall	__gptrget
+	mov	r4,a
+	jz	00108$
+;	./lib/stc8uart.h:54: Uart1Send(*p++);
+	inc	r5
+	cjne	r5,#0x00,00116$
+	inc	r6
+00116$:
+	mov	dptr,#_Uart1SendStr_p_65536_33
+	mov	a,r5
+	movx	@dptr,a
+	mov	a,r6
+	inc	dptr
+	movx	@dptr,a
+	mov	a,r7
+	inc	dptr
+	movx	@dptr,a
+	mov	dpl,r4
+	push	ar7
+	push	ar6
+	push	ar5
+	lcall	_Uart1Send
+	pop	ar5
+	pop	ar6
+	pop	ar7
+	sjmp	00101$
+00108$:
+	mov	dptr,#_Uart1SendStr_p_65536_33
+	mov	a,r5
+	movx	@dptr,a
+	mov	a,r6
+	inc	dptr
+	movx	@dptr,a
+	mov	a,r7
+	inc	dptr
+	movx	@dptr,a
+;	./lib/stc8uart.h:56: }
+	ret
+;------------------------------------------------------------
+;Allocation info for local variables in function 'Uart2Isr'
+;------------------------------------------------------------
+;	./lib/stc8uart.h:58: void Uart2Isr() __interrupt(UART2_VECTOR)
+;	-----------------------------------------
+;	 function Uart2Isr
+;	-----------------------------------------
+_Uart2Isr:
+	push	acc
+	push	dpl
+	push	dph
+	push	ar7
+	push	ar6
+	push	psw
+	mov	psw,#0x00
+;	./lib/stc8uart.h:60: if (S2CON & S2TI)
+	mov	a,_S2CON
+	jnb	acc.1,00102$
+;	./lib/stc8uart.h:62: S2CON &= ~S2TI;
+	anl	_S2CON,#0xfd
+;	./lib/stc8uart.h:63: uart2.busy = 0;
+	mov	dptr,#_uart2
+	clr	a
+	movx	@dptr,a
+00102$:
+;	./lib/stc8uart.h:65: if (S2CON & S2RI)
+	mov	a,_S2CON
+	jnb	acc.0,00105$
+;	./lib/stc8uart.h:67: S2CON &= ~S2RI;
+	anl	_S2CON,#0xfe
+;	./lib/stc8uart.h:68: uart2.buffer[uart2.wptr++] = S2BUF;
+	mov	dptr,#(_uart2 + 0x0001)
+	movx	a,@dptr
+	mov	r7,a
+	inc	a
+	mov	r6,a
+	mov	dptr,#(_uart2 + 0x0001)
+	movx	@dptr,a
+	mov	a,r7
+	add	a,#(_uart2 + 0x0003)
+	mov	dpl,a
+	clr	a
+	addc	a,#((_uart2 + 0x0003) >> 8)
+	mov	dph,a
+	mov	a,_S2BUF
+	movx	@dptr,a
+;	./lib/stc8uart.h:69: uart2.wptr &= 0x0f;
+	anl	ar6,#0x0f
+	mov	dptr,#(_uart2 + 0x0001)
+	mov	a,r6
+	movx	@dptr,a
+00105$:
+;	./lib/stc8uart.h:71: }
+	pop	psw
+	pop	ar6
+	pop	ar7
+	pop	dph
+	pop	dpl
+	pop	acc
+	reti
+;	eliminated unneeded push/pop b
+;------------------------------------------------------------
+;Allocation info for local variables in function 'Uart2Init'
+;------------------------------------------------------------
+;	./lib/stc8uart.h:73: void Uart2Init()
+;	-----------------------------------------
+;	 function Uart2Init
+;	-----------------------------------------
+_Uart2Init:
+;	./lib/stc8uart.h:75: S2CON = 0x10;
+	mov	_S2CON,#0x10
+;	./lib/stc8uart.h:76: T2L = BRT;
+	mov	_T2L,#0xcc
+;	./lib/stc8uart.h:77: T2H = BRT >> 8;
+	mov	_T2H,#0xff
+;	./lib/stc8uart.h:78: AUXR |= 0x14;
+	orl	_AUXR,#0x14
+;	./lib/stc8uart.h:79: uart2.busy = 0;
+	mov	dptr,#_uart2
+	clr	a
+	movx	@dptr,a
+;	./lib/stc8uart.h:80: uart2.wptr = 0;
+	mov	dptr,#(_uart2 + 0x0001)
+	movx	@dptr,a
+;	./lib/stc8uart.h:81: uart2.rptr = 0;
+	mov	dptr,#(_uart2 + 0x0002)
+	movx	@dptr,a
+;	./lib/stc8uart.h:82: }
+	ret
+;------------------------------------------------------------
+;Allocation info for local variables in function 'Uart2Read'
+;------------------------------------------------------------
+;tmp                       Allocated with name '_Uart2Read_tmp_131072_41'
+;------------------------------------------------------------
+;	./lib/stc8uart.h:84: char Uart2Read()
+;	-----------------------------------------
+;	 function Uart2Read
+;	-----------------------------------------
+_Uart2Read:
+;	./lib/stc8uart.h:86: if (uart2.rptr != uart2.wptr)
+	mov	dptr,#(_uart2 + 0x0002)
+	movx	a,@dptr
+	mov	r7,a
+	mov	dptr,#(_uart2 + 0x0001)
+	movx	a,@dptr
+	mov	r6,a
+	mov	a,r7
+	cjne	a,ar6,00109$
+	sjmp	00102$
+00109$:
+;	./lib/stc8uart.h:88: char tmp = uart2.buffer[uart2.rptr++];
+	mov	a,r7
+	inc	a
+	mov	r6,a
+	mov	dptr,#(_uart2 + 0x0002)
+	movx	@dptr,a
+	mov	a,r7
+	add	a,#(_uart2 + 0x0003)
+	mov	dpl,a
+	clr	a
+	addc	a,#((_uart2 + 0x0003) >> 8)
+	mov	dph,a
+	movx	a,@dptr
+	mov	r7,a
+;	./lib/stc8uart.h:89: uart2.rptr &= 0x0f;
+	anl	ar6,#0x0f
+	mov	dptr,#(_uart2 + 0x0002)
+	mov	a,r6
+	movx	@dptr,a
+;	./lib/stc8uart.h:90: return tmp;
+	mov	dpl,r7
+	ret
+00102$:
+;	./lib/stc8uart.h:92: return 0;
+	mov	dpl,#0x00
+;	./lib/stc8uart.h:93: }
+	ret
+;------------------------------------------------------------
+;Allocation info for local variables in function 'Uart2Send'
+;------------------------------------------------------------
+;dat                       Allocated with name '_Uart2Send_dat_65536_42'
+;------------------------------------------------------------
+;	./lib/stc8uart.h:95: void Uart2Send(char dat)
+;	-----------------------------------------
+;	 function Uart2Send
+;	-----------------------------------------
+_Uart2Send:
+	mov	a,dpl
+	mov	dptr,#_Uart2Send_dat_65536_42
+	movx	@dptr,a
+;	./lib/stc8uart.h:97: while (uart2.busy)
+00101$:
+	mov	dptr,#_uart2
+	movx	a,@dptr
+	jnz	00101$
+;	./lib/stc8uart.h:99: uart2.busy = 1;
+	mov	dptr,#_uart2
+	mov	a,#0x01
+	movx	@dptr,a
+;	./lib/stc8uart.h:100: S2BUF = dat;
+	mov	dptr,#_Uart2Send_dat_65536_42
+	movx	a,@dptr
+	mov	_S2BUF,a
+;	./lib/stc8uart.h:101: }
+	ret
+;------------------------------------------------------------
+;Allocation info for local variables in function 'Uart2SendStr'
+;------------------------------------------------------------
+;p                         Allocated with name '_Uart2SendStr_p_65536_44'
+;------------------------------------------------------------
+;	./lib/stc8uart.h:103: void Uart2SendStr(char *p)
+;	-----------------------------------------
+;	 function Uart2SendStr
+;	-----------------------------------------
+_Uart2SendStr:
+	mov	r7,b
+	mov	r6,dph
+	mov	a,dpl
+	mov	dptr,#_Uart2SendStr_p_65536_44
+	movx	@dptr,a
+	mov	a,r6
+	inc	dptr
+	movx	@dptr,a
+	mov	a,r7
+	inc	dptr
+	movx	@dptr,a
+;	./lib/stc8uart.h:105: while (*p)
+	mov	dptr,#_Uart2SendStr_p_65536_44
+	movx	a,@dptr
+	mov	r5,a
+	inc	dptr
+	movx	a,@dptr
+	mov	r6,a
+	inc	dptr
+	movx	a,@dptr
+	mov	r7,a
+00101$:
+	mov	dpl,r5
+	mov	dph,r6
+	mov	b,r7
+	lcall	__gptrget
+	mov	r4,a
+	jz	00108$
+;	./lib/stc8uart.h:107: Uart2Send(*p++);
+	inc	r5
+	cjne	r5,#0x00,00116$
+	inc	r6
+00116$:
+	mov	dptr,#_Uart2SendStr_p_65536_44
+	mov	a,r5
+	movx	@dptr,a
+	mov	a,r6
+	inc	dptr
+	movx	@dptr,a
+	mov	a,r7
+	inc	dptr
+	movx	@dptr,a
+	mov	dpl,r4
+	push	ar7
+	push	ar6
+	push	ar5
+	lcall	_Uart2Send
+	pop	ar5
+	pop	ar6
+	pop	ar7
+	sjmp	00101$
+00108$:
+	mov	dptr,#_Uart2SendStr_p_65536_44
+	mov	a,r5
+	movx	@dptr,a
+	mov	a,r6
+	inc	dptr
+	movx	@dptr,a
+	mov	a,r7
+	inc	dptr
+	movx	@dptr,a
+;	./lib/stc8uart.h:109: }
+	ret
+;------------------------------------------------------------
+;Allocation info for local variables in function '_IAP_ADDR_TRIG'
+;------------------------------------------------------------
+;address                   Allocated with name '__IAP_ADDR_TRIG_address_65536_47'
+;------------------------------------------------------------
+;	./lib/EEPROM.h:17: void _IAP_ADDR_TRIG(unsigned int address)
+;	-----------------------------------------
+;	 function _IAP_ADDR_TRIG
+;	-----------------------------------------
+__IAP_ADDR_TRIG:
+	mov	r7,dph
+	mov	a,dpl
+	mov	dptr,#__IAP_ADDR_TRIG_address_65536_47
+	movx	@dptr,a
+	mov	a,r7
+	inc	dptr
+	movx	@dptr,a
+;	./lib/EEPROM.h:19: IAP_ADDRL = address;      //设置 IAP 低地址
+	mov	dptr,#__IAP_ADDR_TRIG_address_65536_47
+	movx	a,@dptr
+	mov	r6,a
+	inc	dptr
+	movx	a,@dptr
+	mov	r7,a
+	mov	_IAP_ADDRL,r6
+;	./lib/EEPROM.h:20: IAP_ADDRH = address >> 8; //设置 IAP 高地址
+	mov	_IAP_ADDRH,r7
+;	./lib/EEPROM.h:21: IAP_TRIG = 0x5a;          //写触发命令(0x5a)
+	mov	_IAP_TRIG,#0x5a
+;	./lib/EEPROM.h:22: IAP_TRIG = 0xa5;          //写触发命令(0xa5)
+	mov	_IAP_TRIG,#0xa5
+;	./lib/EEPROM.h:23: }
+	ret
+;------------------------------------------------------------
+;Allocation info for local variables in function 'IapIdle'
+;------------------------------------------------------------
+;	./lib/EEPROM.h:25: void IapIdle()
+;	-----------------------------------------
+;	 function IapIdle
+;	-----------------------------------------
+_IapIdle:
+;	./lib/EEPROM.h:27: IAP_CONTR=0;      //关闭IAP功能
+	mov	_IAP_CONTR,#0x00
+;	./lib/EEPROM.h:28: IAP_CMD = 0;      //清除命令寄存器
+	mov	_IAP_CMD,#0x00
+;	./lib/EEPROM.h:29: IAP_TRIG = 0;     //清除触发寄存器
+	mov	_IAP_TRIG,#0x00
+;	./lib/EEPROM.h:30: IAP_ADDRH = 0x80; //将地址设置到非 IAP 区域
+	mov	_IAP_ADDRH,#0x80
+;	./lib/EEPROM.h:31: IAP_ADDRL = 0;
+	mov	_IAP_ADDRL,#0x00
+;	./lib/EEPROM.h:32: }
+	ret
+;------------------------------------------------------------
+;Allocation info for local variables in function 'IapErase'
+;------------------------------------------------------------
+;address                   Allocated with name '_IapErase_address_65536_50'
+;------------------------------------------------------------
+;	./lib/EEPROM.h:34: void IapErase(unsigned int address)
+;	-----------------------------------------
+;	 function IapErase
+;	-----------------------------------------
+_IapErase:
+	mov	r7,dph
+	mov	a,dpl
+	mov	dptr,#_IapErase_address_65536_50
+	movx	@dptr,a
+	mov	a,r7
+	inc	dptr
+	movx	@dptr,a
+;	./lib/EEPROM.h:36: EA = 0;                             //禁止中断
+;	assignBit
+	clr	_EA
+;	./lib/EEPROM.h:37: IAP_CONTR = IAPEN + ISP_WAIT_24MHZ; //使能 IAP并设置等待时间
+	mov	_IAP_CONTR,#0x81
+;	./lib/EEPROM.h:38: IAP_CMD = 3;                        //设置 IAP 擦除命令
+	mov	_IAP_CMD,#0x03
+;	./lib/EEPROM.h:39: _IAP_ADDR_TRIG(address);
+	mov	dptr,#_IapErase_address_65536_50
+	movx	a,@dptr
+	mov	r6,a
+	inc	dptr
+	movx	a,@dptr
+	mov	r7,a
+	mov	dpl,r6
+	mov	dph,r7
+	lcall	__IAP_ADDR_TRIG
+;	./lib/EEPROM.h:40: _nop_();                            //
+	nop
+;	./lib/EEPROM.h:41: IapIdle();                          //关闭 IAP 功能
+;	./lib/EEPROM.h:42: }
+	ljmp	_IapIdle
+;------------------------------------------------------------
+;Allocation info for local variables in function 'IapRead'
+;------------------------------------------------------------
+;address                   Allocated with name '_IapRead_address_65536_52'
+;dat                       Allocated with name '_IapRead_dat_65536_53'
+;------------------------------------------------------------
+;	./lib/EEPROM.h:44: char IapRead(int address)
+;	-----------------------------------------
+;	 function IapRead
+;	-----------------------------------------
+_IapRead:
+	mov	r7,dph
+	mov	a,dpl
+	mov	dptr,#_IapRead_address_65536_52
+	movx	@dptr,a
+	mov	a,r7
+	inc	dptr
+	movx	@dptr,a
+;	./lib/EEPROM.h:47: IAP_CONTR = IAPEN + ISP_WAIT_24MHZ; //使能 IAP
+	mov	_IAP_CONTR,#0x81
+;	./lib/EEPROM.h:48: IAP_CMD = 1;           //设置 IAP 读命令
+	mov	_IAP_CMD,#0x01
+;	./lib/EEPROM.h:49: _IAP_ADDR_TRIG(address);
+	mov	dptr,#_IapRead_address_65536_52
+	movx	a,@dptr
+	mov	r6,a
+	inc	dptr
+	movx	a,@dptr
+	mov	r7,a
+	mov	dpl,r6
+	mov	dph,r7
+	lcall	__IAP_ADDR_TRIG
+;	./lib/EEPROM.h:50: _nop_();
+	nop
+;	./lib/EEPROM.h:51: dat = IAP_DATA; //读 IAP 数据
+	mov	dptr,#_IapRead_dat_65536_53
+	mov	a,_IAP_DATA
+	movx	@dptr,a
+;	./lib/EEPROM.h:52: IapIdle();      //关闭 IAP 功能
+	lcall	_IapIdle
+;	./lib/EEPROM.h:53: return dat;
+	mov	dptr,#_IapRead_dat_65536_53
+	movx	a,@dptr
+;	./lib/EEPROM.h:54: }
+	mov	dpl,a
+	ret
+;------------------------------------------------------------
+;Allocation info for local variables in function 'IapProgram'
+;------------------------------------------------------------
+;dat                       Allocated with name '_IapProgram_PARM_2'
+;address                   Allocated with name '_IapProgram_address_65536_54'
+;------------------------------------------------------------
+;	./lib/EEPROM.h:56: void IapProgram(int address, char dat)
+;	-----------------------------------------
+;	 function IapProgram
+;	-----------------------------------------
+_IapProgram:
+	mov	r7,dph
+	mov	a,dpl
+	mov	dptr,#_IapProgram_address_65536_54
+	movx	@dptr,a
+	mov	a,r7
+	inc	dptr
+	movx	@dptr,a
+;	./lib/EEPROM.h:58: IAP_CONTR = IAPEN + ISP_WAIT_24MHZ; //使能 IAP
+	mov	_IAP_CONTR,#0x81
+;	./lib/EEPROM.h:59: IAP_CMD = 2;           //设置 IAP 写命令
+	mov	_IAP_CMD,#0x02
+;	./lib/EEPROM.h:60: IAP_DATA = dat;        //写 IAP 数据
+	mov	dptr,#_IapProgram_PARM_2
+	movx	a,@dptr
+	mov	_IAP_DATA,a
+;	./lib/EEPROM.h:61: _IAP_ADDR_TRIG(address);
+	mov	dptr,#_IapProgram_address_65536_54
+	movx	a,@dptr
+	mov	r6,a
+	inc	dptr
+	movx	a,@dptr
+	mov	r7,a
+	mov	dpl,r6
+	mov	dph,r7
+	lcall	__IAP_ADDR_TRIG
+;	./lib/EEPROM.h:62: _nop_();
+	nop
+;	./lib/EEPROM.h:63: IapIdle(); //关闭 IAP 功能
+;	./lib/EEPROM.h:64: }
+	ljmp	_IapIdle
+;------------------------------------------------------------
+;Allocation info for local variables in function 'Delay100ms'
+;------------------------------------------------------------
+;i                         Allocated with name '_Delay100ms_i_65536_80'
+;j                         Allocated with name '_Delay100ms_j_65536_80'
+;k                         Allocated with name '_Delay100ms_k_65536_80'
+;------------------------------------------------------------
+;	.\src\main.c:39: void Delay100ms() //@24.000MHz
+;	-----------------------------------------
+;	 function Delay100ms
+;	-----------------------------------------
+_Delay100ms:
+;	.\src\main.c:43: _nop_();
+	nop
+;	.\src\main.c:44: _nop_();
+	nop
+;	.\src\main.c:52: while (--k)
+	mov	r7,#0xd6
+	mov	r6,#0x2d
+	mov	r5,#0x0d
+00101$:
+	djnz	r7,00101$
+;	.\src\main.c:54: } while (--j);
+	djnz	r6,00101$
+;	.\src\main.c:55: } while (--i);
+	djnz	r5,00101$
+;	.\src\main.c:56: }
+	ret
+;------------------------------------------------------------
+;Allocation info for local variables in function 'Delay100us'
+;------------------------------------------------------------
+;i                         Allocated with name '_Delay100us_i_65536_83'
+;j                         Allocated with name '_Delay100us_j_65536_83'
+;------------------------------------------------------------
+;	.\src\main.c:58: void Delay100us() //@24.000MHz
+;	-----------------------------------------
+;	 function Delay100us
+;	-----------------------------------------
+_Delay100us:
+;	.\src\main.c:65: while (--j)
+	mov	r7,#0x1b
+	mov	r6,#0x04
+00101$:
+	djnz	r7,00101$
+;	.\src\main.c:67: } while (--i);
+	djnz	r6,00101$
+;	.\src\main.c:68: }
+	ret
+;------------------------------------------------------------
+;Allocation info for local variables in function 'Delay1us'
+;------------------------------------------------------------
+;i                         Allocated with name '_Delay1us_i_65536_85'
+;------------------------------------------------------------
+;	.\src\main.c:69: void Delay1us() //@24.000MHz
+;	-----------------------------------------
+;	 function Delay1us
+;	-----------------------------------------
+_Delay1us:
+;	.\src\main.c:74: while (--i)
+	mov	r7,#0x06
+00101$:
+	djnz	r7,00101$
+;	.\src\main.c:76: }
+	ret
+;------------------------------------------------------------
+;Allocation info for local variables in function 'ROM_Write'
+;------------------------------------------------------------
+;l                         Allocated with name '_ROM_Write_l_65536_86'
+;h                         Allocated with name '_ROM_Write_h_65536_86'
+;------------------------------------------------------------
+;	.\src\main.c:78: void ROM_Write()
+;	-----------------------------------------
+;	 function ROM_Write
+;	-----------------------------------------
+_ROM_Write:
+;	.\src\main.c:81: IapErase(0x0000);
+	mov	dptr,#0x0000
+	lcall	_IapErase
+;	.\src\main.c:82: Delay100us();
+	lcall	_Delay100us
+;	.\src\main.c:84: l = motor_circle;
+	mov	dptr,#_motor_circle
+	movx	a,@dptr
+;	.\src\main.c:86: IapProgram(0x00, l);
+	mov	dptr,#_IapProgram_PARM_2
+	movx	@dptr,a
+	mov	dptr,#0x0000
+	lcall	_IapProgram
+;	.\src\main.c:87: Delay100us();
+	lcall	_Delay100us
+;	.\src\main.c:88: IapProgram(0x01, h);
+	mov	dptr,#_IapProgram_PARM_2
+	clr	a
+	movx	@dptr,a
+	mov	dptr,#0x0001
+	lcall	_IapProgram
+;	.\src\main.c:89: Delay100us();
+	lcall	_Delay100us
+;	.\src\main.c:90: l = value_hz;
+	mov	dptr,#_value_hz
+	movx	a,@dptr
+	mov	r6,a
+	inc	dptr
+	movx	a,@dptr
+	mov	r7,a
+	mov	ar5,r6
+;	.\src\main.c:91: h = value_hz >> 8;
+	mov	dptr,#_ROM_Write_h_65536_86
+	mov	a,r7
+	movx	@dptr,a
+;	.\src\main.c:92: IapProgram(0x10, l);
+	mov	dptr,#_IapProgram_PARM_2
+	mov	a,r5
+	movx	@dptr,a
+	mov	dptr,#0x0010
+	lcall	_IapProgram
+;	.\src\main.c:93: Delay100us();
+	lcall	_Delay100us
+;	.\src\main.c:94: IapProgram(0x11, h);
+	mov	dptr,#_ROM_Write_h_65536_86
+	movx	a,@dptr
+	mov	dptr,#_IapProgram_PARM_2
+	movx	@dptr,a
+	mov	dptr,#0x0011
+;	.\src\main.c:95: }
+	ljmp	_IapProgram
+;------------------------------------------------------------
+;Allocation info for local variables in function 'Tohome'
+;------------------------------------------------------------
+;	.\src\main.c:97: void Tohome()
+;	-----------------------------------------
+;	 function Tohome
+;	-----------------------------------------
+_Tohome:
+;	.\src\main.c:100: for (i = 0; i < 100; i++)
+	mov	dptr,#_i
+	clr	a
+	movx	@dptr,a
+	inc	dptr
+	movx	@dptr,a
+00107$:
+;	.\src\main.c:102: PUL = 0;
+;	assignBit
+	clr	_P33
+;	.\src\main.c:103: Delay100us();
+	lcall	_Delay100us
+;	.\src\main.c:104: Delay100us();
+	lcall	_Delay100us
+;	.\src\main.c:105: Delay100us();
+	lcall	_Delay100us
+;	.\src\main.c:106: PUL = 1;
+;	assignBit
+	setb	_P33
+;	.\src\main.c:107: Delay100us();
+	lcall	_Delay100us
+;	.\src\main.c:108: Delay100us();
+	lcall	_Delay100us
+;	.\src\main.c:109: Delay100us();
+	lcall	_Delay100us
+;	.\src\main.c:100: for (i = 0; i < 100; i++)
+	mov	dptr,#_i
+	movx	a,@dptr
+	add	a,#0x01
+	movx	@dptr,a
+	inc	dptr
+	movx	a,@dptr
+	addc	a,#0x00
+	movx	@dptr,a
+	mov	dptr,#_i
+	movx	a,@dptr
+	mov	r6,a
+	inc	dptr
+	movx	a,@dptr
+	mov	r7,a
+	clr	c
+	mov	a,r6
+	subb	a,#0x64
+	mov	a,r7
+	subb	a,#0x00
+	jc	00107$
+;	.\src\main.c:111: while (1)
+00105$:
+;	.\src\main.c:113: if (X1 == 1)
+	jb	_P07,00106$
+;	.\src\main.c:115: PUL = 0;
+;	assignBit
+	clr	_P33
+;	.\src\main.c:116: Delay100us();
+	lcall	_Delay100us
+;	.\src\main.c:117: Delay100us();
+	lcall	_Delay100us
+;	.\src\main.c:118: Delay100us();
+	lcall	_Delay100us
+;	.\src\main.c:119: Delay100us();
+	lcall	_Delay100us
+;	.\src\main.c:120: Delay100us();
+	lcall	_Delay100us
+;	.\src\main.c:121: PUL = 1;
+;	assignBit
+	setb	_P33
+;	.\src\main.c:122: Delay100us();
+	lcall	_Delay100us
+;	.\src\main.c:123: Delay100us();
+	lcall	_Delay100us
+;	.\src\main.c:124: Delay100us();
+	lcall	_Delay100us
+;	.\src\main.c:125: Delay100us();
+	lcall	_Delay100us
+;	.\src\main.c:126: Delay100us();
+	lcall	_Delay100us
+	sjmp	00105$
+00106$:
+;	.\src\main.c:128: return;
+;	.\src\main.c:129: }
+	ret
+;------------------------------------------------------------
+;Allocation info for local variables in function 'Run'
+;------------------------------------------------------------
+;	.\src\main.c:131: void Run()
+;	-----------------------------------------
+;	 function Run
+;	-----------------------------------------
+_Run:
+;	.\src\main.c:133: Y0 = 1;
+;	assignBit
+	setb	_P12
+;	.\src\main.c:134: while (1)
+00113$:
+;	.\src\main.c:136: if (X2 == 0)
+	jb	_P06,00113$
+;	.\src\main.c:138: PCA_Run(value_max * motor_circle);
+	mov	dptr,#_motor_circle
+	movx	a,@dptr
+	mov	r7,a
+	mov	dptr,#_value_max
+	movx	a,@dptr
+	mov	r5,a
+	inc	dptr
+	movx	a,@dptr
+	mov	r6,a
+	mov	dptr,#__mulint_PARM_2
+	mov	a,r7
+	movx	@dptr,a
+	clr	a
+	inc	dptr
+	movx	@dptr,a
+	mov	dpl,r5
+	mov	dph,r6
+	lcall	__mulint
+	lcall	_PCA_Run
+;	.\src\main.c:139: while (!PCA_state)
+00101$:
+	mov	dptr,#_PCA_state
+	movx	a,@dptr
+	mov	r6,a
+	inc	dptr
+	movx	a,@dptr
+	orl	a,r6
+	jz	00101$
+;	.\src\main.c:141: Y0 = 0;
+;	assignBit
+	clr	_P12
+;	.\src\main.c:142: Tohome();
+	lcall	_Tohome
+;	.\src\main.c:143: while (1)
+00108$:
+;	.\src\main.c:145: if (X3 != 0 && X2 != 0)
+	jnb	_P05,00108$
+	jnb	_P06,00108$
+;	.\src\main.c:148: Delay100us();
+	lcall	_Delay100us
+;	.\src\main.c:149: ROM_Write();
+;	.\src\main.c:150: return;
+;	.\src\main.c:153: }
+	ljmp	_ROM_Write
+;------------------------------------------------------------
+;Allocation info for local variables in function 'UART_Read'
+;------------------------------------------------------------
+;dat                       Allocated with name '_UART_Read_dat_65536_95'
+;------------------------------------------------------------
+;	.\src\main.c:155: void UART_Read(unsigned char dat)
+;	-----------------------------------------
+;	 function UART_Read
+;	-----------------------------------------
+_UART_Read:
+;	.\src\main.c:157: buf = Uart2Read();
+	lcall	_Uart2Read
+	mov	r7,dpl
+	mov	dptr,#_buf
+	mov	a,r7
+	movx	@dptr,a
+;	.\src\main.c:158: if (buf != 0x0d && buf != 0x0a && buf != 'K')
+	cjne	r7,#0x0d,00131$
+	sjmp	00102$
+00131$:
+	cjne	r7,#0x0a,00132$
+	sjmp	00102$
+00132$:
+	cjne	r7,#0x4b,00133$
+	sjmp	00102$
+00133$:
+;	.\src\main.c:160: uart2buff[uart2num] = buf;
+	mov	dptr,#_uart2num
+	movx	a,@dptr
+	mov	r6,a
+	add	a,#_uart2buff
+	mov	dpl,a
+	clr	a
+	addc	a,#(_uart2buff >> 8)
+	mov	dph,a
+	mov	a,r7
+	movx	@dptr,a
+;	.\src\main.c:161: uart2num += 1;
+	mov	dptr,#_uart2num
+	movx	a,@dptr
+	mov	r7,a
+	inc	a
+	movx	@dptr,a
+00102$:
+;	.\src\main.c:163: if (buf == 0x0d || buf == 0x0a || buf == 'K')
+	mov	dptr,#_buf
+	movx	a,@dptr
+	mov	r7,a
+	cjne	r7,#0x0d,00134$
+	sjmp	00105$
+00134$:
+	cjne	r7,#0x0a,00135$
+	sjmp	00105$
+00135$:
+	cjne	r7,#0x4b,00109$
+00105$:
+;	.\src\main.c:165: uart2buff[uart2num] = buf;
+	mov	dptr,#_uart2num
+	movx	a,@dptr
+	add	a,#_uart2buff
+	mov	r7,a
+	clr	a
+	addc	a,#(_uart2buff >> 8)
+	mov	r6,a
+	mov	dptr,#_buf
+	movx	a,@dptr
+	mov	r5,a
+	mov	dpl,r7
+	mov	dph,r6
+	movx	@dptr,a
+;	.\src\main.c:166: uart2num += 1;
+	mov	dptr,#_uart2num
+	movx	a,@dptr
+	mov	r7,a
+	inc	a
+	movx	@dptr,a
+;	.\src\main.c:167: uart2end = 1;
+	mov	dptr,#_uart2end
+	mov	a,#0x01
+	movx	@dptr,a
+00109$:
+;	.\src\main.c:169: }
+	ret
+;------------------------------------------------------------
+;Allocation info for local variables in function 'Rom_Init'
+;------------------------------------------------------------
+;h                         Allocated with name '_Rom_Init_h_65536_99'
+;l                         Allocated with name '_Rom_Init_l_65536_99'
+;------------------------------------------------------------
+;	.\src\main.c:171: void Rom_Init()
+;	-----------------------------------------
+;	 function Rom_Init
+;	-----------------------------------------
+_Rom_Init:
+;	.\src\main.c:174: l = IapRead(0x00);
+	mov	dptr,#0x0000
+	lcall	_IapRead
+;	.\src\main.c:175: h = IapRead(0x01);
+	mov	dptr,#0x0001
+	lcall	_IapRead
+;	.\src\main.c:178: motor_circle = motor_circle & l;
+	mov	dptr,#_motor_circle
+	clr	a
+	movx	@dptr,a
+;	.\src\main.c:180: l = IapRead(0x10);
+	mov	dptr,#0x0010
+	lcall	_IapRead
+	mov	r7,dpl
+;	.\src\main.c:181: h = IapRead(0x11);
+	mov	dptr,#0x0011
+	push	ar7
+	lcall	_IapRead
+	mov	r6,dpl
+	pop	ar7
+;	.\src\main.c:182: value_hz = h;
+;	.\src\main.c:183: value_hz = value_hz << 8;
+	mov	ar5,r6
+	mov	r6,#0x00
+;	.\src\main.c:184: value_hz = value_hz & l;
+	mov	r4,#0x00
+	mov	dptr,#_value_hz
+	mov	a,r7
+	anl	a,r6
+	movx	@dptr,a
+	mov	a,r4
+	anl	a,r5
+	inc	dptr
+	movx	@dptr,a
+;	.\src\main.c:185: }
+	ret
+;------------------------------------------------------------
+;Allocation info for local variables in function 'UART_Handle'
+;------------------------------------------------------------
+;dat                       Allocated with name '_UART_Handle_dat_65536_100'
+;------------------------------------------------------------
+;	.\src\main.c:187: void UART_Handle(char *dat)
+;	-----------------------------------------
+;	 function UART_Handle
+;	-----------------------------------------
+_UART_Handle:
+;	.\src\main.c:189: if (uart2end)
+	mov	dptr,#_uart2end
+	movx	a,@dptr
+	jnz	00209$
+	ret
+00209$:
+;	.\src\main.c:191: if (strstr(uart2buff, Button_02))
+	mov	dptr,#_strstr_PARM_2
+	mov	a,#_Button_02
+	movx	@dptr,a
+	mov	a,#(_Button_02 >> 8)
+	inc	dptr
+	movx	@dptr,a
+	clr	a
+	inc	dptr
+	movx	@dptr,a
+	mov	dptr,#_uart2buff
+	mov	b,#0x00
+	lcall	_strstr
+	mov	r5,dpl
+	mov	r6,dph
+	mov	r7,b
+	mov	a,r5
+	orl	a,r6
+	jz	00105$
+;	.\src\main.c:193: switch (Page)
+	mov	dptr,#_Page
+	movx	a,@dptr
+	mov	r7,a
+	jz	00212$
+	sjmp	00105$
+00212$:
+;	.\src\main.c:197: Run();
+	lcall	_Run
+;	.\src\main.c:202: }
+00105$:
+;	.\src\main.c:204: if (strstr(uart2buff, Button_03))
+	mov	dptr,#_strstr_PARM_2
+	mov	a,#_Button_03
+	movx	@dptr,a
+	mov	a,#(_Button_03 >> 8)
+	inc	dptr
+	movx	@dptr,a
+	clr	a
+	inc	dptr
+	movx	@dptr,a
+	mov	dptr,#_uart2buff
+	mov	b,#0x00
+	lcall	_strstr
+	mov	r5,dpl
+	mov	r6,dph
+	mov	r7,b
+	mov	a,r5
+	orl	a,r6
+	jz	00110$
+;	.\src\main.c:206: switch (Page)
+	mov	dptr,#_Page
+	movx	a,@dptr
+	mov	r7,a
+	cjne	r7,#0x01,00110$
+;	.\src\main.c:210: motor_circle += 1;
+	mov	dptr,#_motor_circle
+	movx	a,@dptr
+	mov	r7,a
+	inc	a
+	movx	@dptr,a
+;	.\src\main.c:215: }
+00110$:
+;	.\src\main.c:217: if (strstr(uart2buff, Button_04))
+	mov	dptr,#_strstr_PARM_2
+	mov	a,#_Button_04
+	movx	@dptr,a
+	mov	a,#(_Button_04 >> 8)
+	inc	dptr
+	movx	@dptr,a
+	clr	a
+	inc	dptr
+	movx	@dptr,a
+	mov	dptr,#_uart2buff
+	mov	b,#0x00
+	lcall	_strstr
+	mov	r5,dpl
+	mov	r6,dph
+	mov	r7,b
+	mov	a,r5
+	orl	a,r6
+	jz	00116$
+;	.\src\main.c:219: switch (Page)
+	mov	dptr,#_Page
+	movx	a,@dptr
+	mov	r7,a
+	jz	00111$
+;	.\src\main.c:221: case 0:
+	cjne	r7,#0x01,00116$
+	sjmp	00112$
+00111$:
+;	.\src\main.c:223: IAP_CONTR = 0x60;
+	mov	_IAP_CONTR,#0x60
+;	.\src\main.c:224: break;
+;	.\src\main.c:226: case 1:
+	sjmp	00116$
+00112$:
+;	.\src\main.c:228: motor_circle -= 1;
+	mov	dptr,#_motor_circle
+	movx	a,@dptr
+	mov	r7,a
+	dec	a
+	movx	@dptr,a
+;	.\src\main.c:233: }
+00116$:
+;	.\src\main.c:235: if (strstr(uart2buff, Button_07))
+	mov	dptr,#_strstr_PARM_2
+	mov	a,#_Button_07
+	movx	@dptr,a
+	mov	a,#(_Button_07 >> 8)
+	inc	dptr
+	movx	@dptr,a
+	clr	a
+	inc	dptr
+	movx	@dptr,a
+	mov	dptr,#_uart2buff
+	mov	b,#0x00
+	lcall	_strstr
+	mov	r5,dpl
+	mov	r6,dph
+	mov	r7,b
+	mov	a,r5
+	orl	a,r6
+	jz	00121$
+;	.\src\main.c:237: switch (Page)
+	mov	dptr,#_Page
+	movx	a,@dptr
+	mov	r7,a
+	cjne	r7,#0x01,00121$
+;	.\src\main.c:241: value_hz += 5;
+	mov	dptr,#_value_hz
+	movx	a,@dptr
+	mov	r6,a
+	inc	dptr
+	movx	a,@dptr
+	mov	r7,a
+	mov	dptr,#_value_hz
+	mov	a,#0x05
+	add	a,r6
+	movx	@dptr,a
+	clr	a
+	addc	a,r7
+	inc	dptr
+	movx	@dptr,a
+;	.\src\main.c:246: }
+00121$:
+;	.\src\main.c:248: if (strstr(uart2buff, Button_08))
+	mov	dptr,#_strstr_PARM_2
+	mov	a,#_Button_08
+	movx	@dptr,a
+	mov	a,#(_Button_08 >> 8)
+	inc	dptr
+	movx	@dptr,a
+	clr	a
+	inc	dptr
+	movx	@dptr,a
+	mov	dptr,#_uart2buff
+	mov	b,#0x00
+	lcall	_strstr
+	mov	r5,dpl
+	mov	r6,dph
+	mov	r7,b
+	mov	a,r5
+	orl	a,r6
+	jz	00126$
+;	.\src\main.c:250: switch (Page)
+	mov	dptr,#_Page
+	movx	a,@dptr
+	mov	r7,a
+	cjne	r7,#0x01,00126$
+;	.\src\main.c:254: value_hz -= 5;
+	mov	dptr,#_value_hz
+	movx	a,@dptr
+	mov	r6,a
+	inc	dptr
+	movx	a,@dptr
+	mov	r7,a
+	mov	a,r6
+	add	a,#0xfb
+	mov	r6,a
+	mov	a,r7
+	addc	a,#0xff
+	mov	r7,a
+	mov	dptr,#_value_hz
+	mov	a,r6
+	movx	@dptr,a
+	mov	a,r7
+	inc	dptr
+	movx	@dptr,a
+;	.\src\main.c:259: }
+00126$:
+;	.\src\main.c:261: if (strstr(uart2buff, Page_00))
+	mov	dptr,#_strstr_PARM_2
+	mov	a,#_Page_00
+	movx	@dptr,a
+	mov	a,#(_Page_00 >> 8)
+	inc	dptr
+	movx	@dptr,a
+	clr	a
+	inc	dptr
+	movx	@dptr,a
+	mov	dptr,#_uart2buff
+	mov	b,#0x00
+	lcall	_strstr
+	mov	r5,dpl
+	mov	r6,dph
+	mov	a,r5
+	orl	a,r6
+	jz	00128$
+;	.\src\main.c:263: Page = 0;
+	mov	dptr,#_Page
+	clr	a
+	movx	@dptr,a
+00128$:
+;	.\src\main.c:265: if (strstr(uart2buff, Page_01))
+	mov	dptr,#_strstr_PARM_2
+	mov	a,#_Page_01
+	movx	@dptr,a
+	mov	a,#(_Page_01 >> 8)
+	inc	dptr
+	movx	@dptr,a
+	clr	a
+	inc	dptr
+	movx	@dptr,a
+	mov	dptr,#_uart2buff
+	mov	b,#0x00
+	lcall	_strstr
+	mov	r5,dpl
+	mov	r6,dph
+	mov	a,r5
+	orl	a,r6
+	jz	00130$
+;	.\src\main.c:267: Page = 1;
+	mov	dptr,#_Page
+	mov	a,#0x01
+	movx	@dptr,a
+00130$:
+;	.\src\main.c:269: if (strstr(uart2buff, Page_02))
+	mov	dptr,#_strstr_PARM_2
+	mov	a,#_Page_02
+	movx	@dptr,a
+	mov	a,#(_Page_02 >> 8)
+	inc	dptr
+	movx	@dptr,a
+	clr	a
+	inc	dptr
+	movx	@dptr,a
+	mov	dptr,#_uart2buff
+	mov	b,#0x00
+	lcall	_strstr
+	mov	r5,dpl
+	mov	r6,dph
+	mov	r7,b
+	mov	a,r5
+	orl	a,r6
+	jz	00132$
+;	.\src\main.c:271: Page = 2;
+	mov	dptr,#_Page
+	mov	a,#0x02
+	movx	@dptr,a
+00132$:
+;	.\src\main.c:273: uart2num = 0;
+	mov	dptr,#_uart2num
+	clr	a
+	movx	@dptr,a
+;	.\src\main.c:274: uart2end = 0;
+	mov	dptr,#_uart2end
+	movx	@dptr,a
+;	.\src\main.c:275: i = sizeof(uart2buff) / sizeof(uart2buff[0]);
+	mov	dptr,#_i
+	mov	a,#0x14
+	movx	@dptr,a
+	clr	a
+	inc	dptr
+	movx	@dptr,a
+;	.\src\main.c:276: for (ii = 0; ii < i; ii++)
+	mov	dptr,#_ii
+	movx	@dptr,a
+	inc	dptr
+	movx	@dptr,a
+00137$:
+	mov	dptr,#_ii
+	movx	a,@dptr
+	mov	r6,a
+	inc	dptr
+	movx	a,@dptr
+	mov	r7,a
+	mov	dptr,#_i
+	movx	a,@dptr
+	mov	r4,a
+	inc	dptr
+	movx	a,@dptr
+	mov	r5,a
+	clr	c
+	mov	a,r6
+	subb	a,r4
+	mov	a,r7
+	subb	a,r5
+	jnc	00139$
+;	.\src\main.c:278: uart2buff[ii] = 0;
+	mov	a,r6
+	add	a,#_uart2buff
+	mov	dpl,a
+	mov	a,r7
+	addc	a,#(_uart2buff >> 8)
+	mov	dph,a
+	clr	a
+	movx	@dptr,a
+;	.\src\main.c:276: for (ii = 0; ii < i; ii++)
+	mov	dptr,#_ii
+	movx	a,@dptr
+	add	a,#0x01
+	movx	@dptr,a
+	inc	dptr
+	movx	a,@dptr
+	addc	a,#0x00
+	movx	@dptr,a
+	sjmp	00137$
+00139$:
+;	.\src\main.c:281: }
 	ret
 ;------------------------------------------------------------
 ;Allocation info for local variables in function 'main'
 ;------------------------------------------------------------
-;	.\src\main.c:29: void main()
+;	.\src\main.c:283: void main()
 ;	-----------------------------------------
 ;	 function main
 ;	-----------------------------------------
 _main:
-;	.\src\main.c:31: P_SW1 = 0x30;
+;	.\src\main.c:285: P_SW1 = 0x30;
 	mov	_P_SW1,#0x30
-;	.\src\main.c:32: EA=1;
+;	.\src\main.c:286: P1 = 0x00;
+	mov	_P1,#0x00
+;	.\src\main.c:287: P0M1 = 0x00;
+	mov	_P0M1,#0x00
+;	.\src\main.c:288: P0M0 = 0X00;
+	mov	_P0M0,#0x00
+;	.\src\main.c:289: P4M1 = 0x00;
+	mov	_P4M1,#0x00
+;	.\src\main.c:290: P4M0 = 0x00;
+	mov	_P4M0,#0x00
+;	.\src\main.c:291: P1M0 = 0xfe;
+	mov	_P1M0,#0xfe
+;	.\src\main.c:292: P1M1 = 0x00;
+	mov	_P1M1,#0x00
+;	.\src\main.c:293: PCA_Init();
+	lcall	_PCA_Init
+;	.\src\main.c:294: Uart2Init();
+	lcall	_Uart2Init
+;	.\src\main.c:295: Rom_Init();
+	lcall	_Rom_Init
+;	.\src\main.c:297: IE2 = 0x01;
+	mov	_IE2,#0x01
+;	.\src\main.c:298: ES = 1;
+;	assignBit
+	setb	_ES
+;	.\src\main.c:299: EA = 1;
 ;	assignBit
 	setb	_EA
-;	.\src\main.c:33: PCA_Init();
-	lcall	_PCA_Init
-;	.\src\main.c:34: value_hz=5000;
-	mov	dptr,#_value_hz
-	mov	a,#0x88
-	movx	@dptr,a
-	mov	a,#0x13
-	inc	dptr
-	movx	@dptr,a
-;	.\src\main.c:35: value_max=10000;
-	mov	dptr,#_value_max
-	mov	a,#0x10
-	movx	@dptr,a
-	mov	a,#0x27
-	inc	dptr
-	movx	@dptr,a
-;	.\src\main.c:36: while (1)
+;	.\src\main.c:300: while (1)
 00106$:
-;	.\src\main.c:38: if(X0==0)
-	jb	_P43,00102$
-;	.\src\main.c:40: PCA_Run();
-	lcall	_PCA_Run
-00102$:
-;	.\src\main.c:43: if(X1==0)
-	jb	_P07,00106$
-;	.\src\main.c:45: PCA_Stop();
-	lcall	_PCA_Stop
-;	.\src\main.c:48: }
+;	.\src\main.c:302: if (X2 != 0)
+	jnb	_P06,00104$
+;	.\src\main.c:304: if (X0 == 0)
+	jb	_P43,00104$
+;	.\src\main.c:306: Run();
+	lcall	_Run
+00104$:
+;	.\src\main.c:309: UART_Read(0);
+	mov	dpl,#0x00
+	lcall	_UART_Read
+;	.\src\main.c:310: UART_Handle(0);
+	mov	dptr,#0x0000
+	mov	b,#0x00
+	lcall	_UART_Handle
+;	.\src\main.c:312: }
 	sjmp	00106$
 	.area CSEG    (CODE)
 	.area CONST   (CODE)
@@ -1001,4 +2587,105 @@ __xinit__value_hz:
 	.byte #0x10, #0x27	; 10000
 __xinit__value_count:
 	.byte #0x00, #0x00	; 0
+__xinit__value_max:
+	.byte #0x40, #0x06	; 1600
+__xinit__PCA_state:
+	.byte #0x00, #0x00	; 0
+__xinit__Button_00:
+	.ascii "[BN:0]"
+	.db 0x00
+__xinit__Button_01:
+	.ascii "[BN:1]"
+	.db 0x00
+__xinit__Button_02:
+	.ascii "[BN:2]"
+	.db 0x00
+__xinit__Button_03:
+	.ascii "[BN:3]"
+	.db 0x00
+__xinit__Button_04:
+	.ascii "[BN:4]"
+	.db 0x00
+__xinit__Button_05:
+	.ascii "[BN:5]"
+	.db 0x00
+__xinit__Button_06:
+	.ascii "[BN:6]"
+	.db 0x00
+__xinit__Button_07:
+	.ascii "[BN:7]"
+	.db 0x00
+__xinit__Button_08:
+	.ascii "[BN:8]"
+	.db 0x00
+__xinit__Button_09:
+	.ascii "[BN:9]"
+	.db 0x00
+__xinit__tests:
+	.ascii "[BN:2]"
+	.db 0x00
+__xinit__Page_00:
+	.ascii "PAGE0OK"
+	.db 0x00
+__xinit__Page_01:
+	.ascii "PAGE1OK"
+	.db 0x00
+__xinit__Page_02:
+	.ascii "PAGE2OK"
+	.db 0x00
+__xinit__Page_03:
+	.ascii "PAGE3OK"
+	.db 0x00
+__xinit__Page:
+	.db #0x00	; 0
+__xinit__uart1buff:
+	.db #0x00	; 0
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+__xinit__uart2buff:
+	.db #0x00	; 0
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+	.db 0x00
+__xinit__uart1num:
+	.db #0x00	; 0
+__xinit__uart2num:
+	.db #0x00	; 0
+__xinit__uart1end:
+	.db #0x00	; 0
+__xinit__uart2end:
+	.db #0x00	; 0
 	.area CABS    (ABS,CODE)

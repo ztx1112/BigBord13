@@ -44,7 +44,7 @@ void IapErase(unsigned int address)
 char IapRead(int address)
 {
       char dat;
-      IAP_CONTR = WT_12M;    //使能 IAP
+      IAP_CONTR = IAPEN + ISP_WAIT_24MHZ; //使能 IAP
       IAP_CMD = 1;           //设置 IAP 读命令
       _IAP_ADDR_TRIG(address);
       _nop_();
@@ -55,7 +55,7 @@ char IapRead(int address)
 
 void IapProgram(int address, char dat)
 {
-      IAP_CONTR = WT_12M;    //使能 IAP
+      IAP_CONTR = IAPEN + ISP_WAIT_24MHZ; //使能 IAP
       IAP_CMD = 2;           //设置 IAP 写命令
       IAP_DATA = dat;        //写 IAP 数据
       _IAP_ADDR_TRIG(address);

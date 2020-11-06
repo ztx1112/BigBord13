@@ -5,6 +5,7 @@
 #include "stc8uart.h"
 #include "EEPROM.h"
 #include "io.h"
+#include"string.h"
 
 char Button_00[] = "[BN:0]";
 char Button_01[] = "[BN:1]";
@@ -76,11 +77,21 @@ void Delay1us() //@24.000MHz
 
 void ROM_Write()
 {
+    unsigned char l, h;
     IapErase(0x0000);
     Delay100us();
-    IapProgram(0x0000, value_max);
+
+    l = motor_circle;
+    h = motor_circle >> 8;
+    IapProgram(0x00, l);
     Delay100us();
-    IapProgram(0x0010, value_hz);
+    IapProgram(0x01, h);
+    Delay100us();
+    l = value_hz;
+    h = value_hz >> 8;
+    IapProgram(0x10, l);
+    Delay100us();
+    IapProgram(0x11, h);
 }
 
 void Tohome()
@@ -124,7 +135,7 @@ void Run()
     {
         if (X2 == 0)
         {
-            PCA_Run(value_max);
+            PCA_Run(value_max * motor_circle);
             while (!PCA_state)
                 ;
             Y0 = 0;
@@ -159,8 +170,18 @@ void UART_Read(unsigned char dat)
 
 void Rom_Init()
 {
-    value_max = IapRead(0x0000);
-    value_hz = IapRead(0x0010);
+    unsigned char h, l;
+    l = IapRead(0x00);
+    h = IapRead(0x01);
+    motor_circle = h;
+    motor_circle = motor_circle << 8;
+    motor_circle = motor_circle & l;
+
+    l = IapRead(0x10);
+    h = IapRead(0x11);
+    value_hz = h;
+    value_hz = value_hz << 8;
+    value_hz = value_hz & l;
 }
 
 void UART_Handle(char *dat)
@@ -186,7 +207,7 @@ void UART_Handle(char *dat)
             {
             case 1:
             {
-                value_max += 1;
+                motor_circle += 1;
                 break;
             }
             default:
@@ -204,7 +225,7 @@ void UART_Handle(char *dat)
             }
             case 1:
             {
-                value_max -= 1;
+                motor_circle -= 1;
                 break;
             }
             default:

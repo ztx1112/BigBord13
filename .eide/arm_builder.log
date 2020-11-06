@@ -10,3 +10,12 @@
 [2020-09-18 20:05:04]	link failed !, exit code: 1
    在 ARM_Builder_V6.Program.Main(String[] args)
 
+[2020-11-06 09:35:33]	compilation failed at : "d:\Project\source\MCU\BigBord13\src\main.c", exit code: 1
+   在 ARM_Builder_V6.Program.Main(String[] args)
+
+[2020-11-06 09:36:47]	compilation failed at : "d:\Project\source\MCU\BigBord13\src\main.c", exit code: 1
+   在 ARM_Builder_V6.Program.Main(String[] args)
+
+[2020-11-06 09:38:13]	compilation failed at : "d:\Project\source\MCU\BigBord13\src\main.c", exit code: 1
+   在 ARM_Builder_V6.Program.Main(String[] args)
+

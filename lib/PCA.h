@@ -8,9 +8,13 @@
 
 unsigned int value_hz = 10000; //设定频率
 unsigned int value;
-unsigned int value_count = 0; //脉冲经过数
-unsigned int value_max;       //脉冲设定数
-unsigned int PCA_state = 0;   //PCA状态
+unsigned int value_count = 0;  //脉冲经过数
+unsigned int value_max = 1600; //脉冲设定数
+unsigned int PCA_state = 0;    //PCA状态
+
+unsigned char motor_circle;
+
+void PCA_Stop();
 
 void PCA_Isr() __interrupt(PCA_VECTOR)
 {
