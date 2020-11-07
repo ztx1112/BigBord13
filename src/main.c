@@ -5,30 +5,27 @@
 #include "stc8uart.h"
 #include "EEPROM.h"
 #include"io.h"
+#include"stc8timer.h"
+#include"gpio.h"
 
 
 
 
 void main()
 {
-    P_SW1 = 0x30;
+    P_SW1 = 0x30;   //ÇÐ»»Îª *0_4
 
     PCA_Init();
     Uart1Init();
+    Timer4Init();
 
     EA = 1;
-    value_hz = 5000;
-    value_max = 10000;
+
     while (1)
     {
-        if (X0 == 0)
+        if(AUXINTIF&T4IF)
         {
-            PCA_Run();
-        }
-
-        if (X1 == 0)
-        {
-            PCA_Stop();
+            GPIO_Updata();
         }
     }
 }
